@@ -1,0 +1,55 @@
+package com.example.demo.controllers;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import com.example.demo.entity.Supplier;
+import com.example.demo.service.SupplierService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+
+@WebMvcTest(SupplierController.class)
+class SupplierControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private SupplierService service;
+
+    @Autowired
+    private ObjectMapper mapper;
+
+    @Test
+    void addSupplier_success() throws Exception {
+        Supplier supplier = new Supplier(1L, "ABC", "999", "Mumbai");
+        when(service.addSupplier(any())).thenReturn(supplier);
+
+        mockMvc.perform(post("/inventory/supplier")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(supplier)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("ABC"));
+    }
+
+    @Test
+    void deleteSupplier_success() throws Exception {
+        doNothing().when(service).deleteSupplier(1L);
+
+        mockMvc.perform(delete("/inventory/supplier/1"))
+                .andExpect(status().isOk());
+    }
+}
+

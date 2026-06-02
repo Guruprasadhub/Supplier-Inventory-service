@@ -1,0 +1,65 @@
+package com.example.demo.controllers;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import com.example.demo.entity.Drug;
+import com.example.demo.service.DrugService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@WebMvcTest(DrugController.class)
+class DrugControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private DrugService service;
+
+    @Autowired
+    private ObjectMapper mapper;
+
+    @Test
+    void getAllDrugs_success() throws Exception {
+        when(service.getAllDrugs())
+                .thenReturn(List.of(new Drug(1L, "Para", "Tab", 100, 10)));
+
+        mockMvc.perform(get("/inventory/drug"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void addDrug_success() throws Exception {
+        Drug drug = new Drug(1L, "Para", "Tab", 100, 10);
+        when(service.addDrug(any())).thenReturn(drug);
+
+        mockMvc.perform(post("/inventory/drug")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(drug)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Para"));
+    }
+
+    @Test
+    void reduceStock_insufficient() throws Exception {
+        when(service.reduceQuantity(1L, 50))
+                .thenThrow(new RuntimeException("Not enough stock"));
+
+        mockMvc.perform(put("/inventory/drug/reduce/1/50"))
+                .andExpect(status().isInternalServerError());
+    }
+}

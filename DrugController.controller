@@ -1,0 +1,53 @@
+package com.example.demo.controllers;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.demo.entity.Drug;
+import com.example.demo.service.DrugService;
+
+@RestController
+@RequestMapping("/inventory/drug")
+public class DrugController {
+	@Autowired
+ private DrugService service;
+	@PostMapping
+	public Drug addDrug(@RequestBody Drug drug) {
+		return service.addDrug(drug);
+	}
+	@GetMapping
+	public List<Drug> getAllDrugs(){
+		return service.getAllDrugs();
+	}
+	
+	@GetMapping("/{id}")
+	public Drug getDrugById(@PathVariable Long id) {
+		return service.getDrugById(id);
+	}
+	
+	@PutMapping("/{id}")
+	public Drug updateDrug(@PathVariable Long id ,@RequestBody Drug drug) {
+		
+		return service.updateDrug(id, drug);
+		
+	}
+	@DeleteMapping("/{id}")
+	public String deleteDrug(@PathVariable Long id) {
+		service.deleteDrug(id);
+		return "Drug deleted successfully";
+	}
+	
+	@PutMapping("/reduce/{id}/{qty}")
+	public Drug reduceStock(@PathVariable Long id,@PathVariable int qty) {
+		return service.reduceQuantity(id,qty);
+	}
+
+}

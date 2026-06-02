@@ -1,0 +1,113 @@
+package com.example.demo.service;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.example.demo.Exception.InsufficientStockException;
+import com.example.demo.Exception.ResourceNotFoundException;
+import com.example.demo.entity.Drug;
+import com.example.demo.repository.DrugRepository;
+import com.example.demo.service.DrugService;
+
+@ExtendWith(MockitoExtension.class)
+class DrugServiceTest {
+
+    @Mock
+    private DrugRepository repo;
+
+    @InjectMocks
+    private DrugService service;
+
+    @Test
+    void addDrug_success() {
+        Drug drug = new Drug(1L, "Paracetamol", "Tablet", 100, 10.0);
+        when(repo.save(drug)).thenReturn(drug);
+
+        Drug saved = service.addDrug(drug);
+
+        assertEquals("Paracetamol", saved.getName());
+        verify(repo).save(drug);
+    }
+
+    @Test
+    void getDrugById_found() {
+        Drug drug = new Drug(1L, "Paracetamol", "Tablet", 100, 10.0);
+        when(repo.findById(1L)).thenReturn(Optional.of(drug));
+
+        Drug result = service.getDrugById(1L);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void getDrugById_notFound() {
+        when(repo.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> service.getDrugById(1L));
+    }
+
+    @Test
+    void updateDrug_success() {
+        Drug existing = new Drug(1L, "Old", "Old", 10, 5.0);
+        Drug updated = new Drug(null, "New", "Tablet", 50, 15.0);
+
+        when(repo.findById(1L)).thenReturn(Optional.of(existing));
+        when(repo.save(any())).thenReturn(existing);
+
+        Drug result = service.updateDrug(1L, updated);
+
+        assertEquals("New", result.getName());
+        assertEquals(50, result.getQuantity());
+    }
+
+    @Test
+    void deleteDrug_success() {
+        when(repo.existsById(1L)).thenReturn(true);
+        doNothing().when(repo).deleteById(1L);
+
+        assertDoesNotThrow(() -> service.deleteDrug(1L));
+    }
+
+    @Test
+    void deleteDrug_notFound() {
+        when(repo.existsById(1L)).thenReturn(false);
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> service.deleteDrug(1L));
+    }
+
+    @Test
+    void reduceQuantity_success() {
+        Drug drug = new Drug(1L, "Paracetamol", "Tablet", 50, 10.0);
+        when(repo.findById(1L)).thenReturn(Optional.of(drug));
+        when(repo.save(any())).thenReturn(drug);
+
+        Drug result = service.reduceQuantity(1L, 20);
+
+        assertEquals(30, result.getQuantity());
+    }
+
+    @Test
+    void reduceQuantity_insufficientStock() {
+        Drug drug = new Drug(1L, "Paracetamol", "Tablet", 10, 10.0);
+        when(repo.findById(1L)).thenReturn(Optional.of(drug));
+
+        assertThrows(InsufficientStockException.class,
+                () -> service.reduceQuantity(1L, 50));
+    }
+}

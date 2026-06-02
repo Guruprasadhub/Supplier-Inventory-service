@@ -1,0 +1,68 @@
+package com.example.demo.service;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.example.demo.Exception.ResourceNotFoundException;
+import com.example.demo.entity.Supplier;
+import com.example.demo.repository.SupplierRepository;
+import com.example.demo.service.SupplierService;
+
+
+@ExtendWith(MockitoExtension.class)
+class SupplierServiceTest {
+
+    @Mock
+    private SupplierRepository repo;
+
+    @InjectMocks
+    private SupplierService service;
+
+    @Test
+    void addSupplier_success() {
+        Supplier supplier = new Supplier(1L, "ABC Pharma", "9999999", "Mumbai");
+        when(repo.save(supplier)).thenReturn(supplier);
+
+        Supplier saved = service.addSupplier(supplier);
+
+        assertEquals("ABC Pharma", saved.getName());
+    }
+
+    @Test
+    void getSupplierById_notFound() {
+        when(repo.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> service.getSupplierById(1L));
+    }
+
+    @Test
+    void updateSupplier_success() {
+        Supplier existing = new Supplier(1L, "Old", "111", "OldAddr");
+        Supplier updated = new Supplier(null, "New", "222", "NewAddr");
+
+        when(repo.findById(1L)).thenReturn(Optional.of(existing));
+        when(repo.save(existing)).thenReturn(existing);
+
+        Supplier result = service.updateSupplier(1L, updated);
+
+        assertEquals("New", result.getName());
+    }
+
+    @Test
+    void deleteSupplier_notFound() {
+        when(repo.existsById(1L)).thenReturn(false);
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> service.deleteSupplier(1L));
+    }
+}
